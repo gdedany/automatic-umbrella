@@ -66,7 +66,7 @@ jobs:
         with:
           url: ${{ secrets.DISCORD_WEBHOOK }}
           json: |
-            { "content": "A new version of pokedex deployed successfully! Commit Hash: ${{ github.sha }} | Commit Message: ${{ github.event.head_commit.message }}" }
+            { "content": "A new version of the app deployed successfully! Commit Hash: ${{ github.sha }} | Commit Message: ${{ github.event.head_commit.message }}" }
 
       - name: Discord Failure Webhook
         if: ${{ failure() || cancelled() }}
