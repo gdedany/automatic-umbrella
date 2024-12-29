@@ -1,0 +1,77 @@
+name: Fly Deploy
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  deploy:
+    name: Deploy app
+    needs: [test]
+    runs-on: ubuntu-latest
+    concurrency: deploy-group
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  bump_version:
+    if: ${{ !contains(github.event.head_commit.message, '#skip') }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    name: Bump version and push tag
+    steps:
+      - name: Checkout repository
+
+        uses: actions/checkout@v4
+      - uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: "patch"
+
+  send_webhook:
+    if: ${{ !contains(github.event.head_commit.message, '#skip') }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    name: Sends a webhook notification to Discord
+    steps:
+      - name: Discord Success Webhook
+        if: ${{ success() }}
+        uses: jasongitmail/fast-webhook@v1
+        with:
+          url: ${{ secrets.DISCORD_WEBHOOK }}
+          json: |
+            { "content": "A new version of pokedex deployed successfully! Commit Hash: ${{ github.sha }} | Commit Message: ${{ github.event.head_commit.message }}" }
+
+      - name: Discord Failure Webhook
+        if: ${{ failure() || cancelled() }}
+        uses: jasongitmail/fast-webhook@v1
+        with:
+          url: ${{ secrets.DISCORD_WEBHOOK }}
+          json: |
+            { "content": "Failed to deploy a new version :( Commit Hash: ${{ github.sha }} | Commit Message: ${{ github.event.head_commit.message }}" }
