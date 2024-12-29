@@ -4,8 +4,9 @@
   "description": "made to practice creating a CI pipeline",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "playwright test --project=chromium",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "ISC",
@@ -13,6 +14,12 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "@flydotio/dockerfile": "^0.5.9"
+    "@eslint/js": "^9.17.0",
+    "@flydotio/dockerfile": "^0.5.9",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.3",
+    "globals": "^15.14.0"
   }
 }
