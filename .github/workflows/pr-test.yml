@@ -12,6 +12,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      - name: Check style
+        run: npm run eslint
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright Browsers
